@@ -45,9 +45,6 @@ services:
     container_name: movinghouse-app
     environment:
       SPRING_CONFIG_IMPORT: "configserver:http://configserver:8071/"
-      SPRING_DATASOURCE_URL: jdbc:mysql://movinghouse-db:3306/movingdb
-      SPRING_RABBITMQ_HOST: rabbitmq
-      SPRING_RABBITMQ_PORT: 5672
     ports:
       - "5000:5000"
     depends_on:
@@ -55,6 +52,8 @@ services:
         condition: service_healthy
       configserver:
         condition: service_healthy
+      eurekaserver:
+        condition: service_started
     networks:
       - movinghousenet
 
@@ -82,7 +81,7 @@ services:
       - "8080:8080"
     depends_on:
       configserver:
-        condition: service_started
+        condition: service_healthy
     networks:
       - movinghousenet
 
@@ -103,6 +102,21 @@ services:
       - "3000:3000"
     volumes:
       - ../analytics/monitoring/grafana/provisioning/datasources:/etc/grafana/provisioning/datasources
+    networks:
+      - movinghousenet
+
+  eurekaserver:
+    build:
+      context: ../eurekaserver
+      dockerfile: Dockerfile
+    container_name: eurekaserver
+    ports:
+      - "8070:8070"
+    depends_on:
+      configserver:
+        condition: service_healthy
+    environment:
+      SPRING_CONFIG_IMPORT: "configserver:http://configserver:8071/"
     networks:
       - movinghousenet
 
